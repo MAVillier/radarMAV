@@ -19,8 +19,7 @@ jobs:
       - name: Setup Node (LTS)
         uses: actions/setup-node@v4
         with:
-          node-version: '22'   # LTS actual
-          # cap cache => evitem el "Dependencies lock file is not found"
+          node-version: '22'   # LTS actual; evita deprecacions
 
       - name: Debug
         run: |
@@ -47,3 +46,4 @@ jobs:
             echo "No changes"; exit 0; fi
           git commit -m "chore: refresh procurement snapshot"
           git push
+``
