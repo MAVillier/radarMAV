@@ -2,8 +2,8 @@ name: Hourly sync snapshot
 
 on:
   schedule:
-    - cron: '17 * * * *'   # cada hora al minut 17
-  workflow_dispatch:        # permet executar-lo manualment
+    - cron: '17 * * * *'     # cada hora al minut 17
+  workflow_dispatch:          # també manual des d'Actions
 
 permissions:
   contents: write
@@ -16,36 +16,34 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node (LTS)
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'           # no fem servir npm, però no molesta
+          node-version: '22'   # LTS actual
+          # cap cache => evitem el "Dependencies lock file is not found"
 
-      - name: Debug repo contents
+      - name: Debug
         run: |
           echo "PWD:" && pwd
           echo "--- ROOT"; ls -la
           echo "--- SCRIPTS"; ls -la scripts || true
           echo "--- DATA"; ls -la data || true
-          echo "--- NODE"; node -v && npm -v
+          node -v
 
-      - name: Check sync script exists
-        run: |
-          test -f scripts/sync.mjs
-          echo "sync.mjs trobat correctament"
-
-      - name: Generate snapshot
+      - name: Run sync (generate data/snapshot.json)
         run: node scripts/sync.mjs
 
-      - name: Commit changes
+      - name: Show items (per log)
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          node -e "const fs=require('fs'); const j=JSON.parse(fs.readFileSync('data/snapshot.json','utf8')); console.log('Items:', (j.items||[]).length)"
+
+      - name: Commit snapshot
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git add data/snapshot.json || true
           if git diff --cached --quiet; then
-            echo "No changes"
-            exit 0
-          fi
+            echo "No changes"; exit 0; fi
           git commit -m "chore: refresh procurement snapshot"
           git push
