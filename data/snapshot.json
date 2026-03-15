@@ -1,8 +1,8 @@
 {
   "meta": {
-    "generated_at": "2026-03-15T16:41:48.406Z",
+    "generated_at": "2026-03-15T16:52:16.314Z",
     "snapshot_scope": "Tot 2026 · PSCP",
-    "items": 5361,
+    "items": 5370,
     "sources": [
       "PSCP publicacions",
       "PSCP execució",
@@ -117950,6 +117950,222 @@
         "count": 1,
         "latest_short": "",
         "recent_short": [],
+        "url": null
+      }
+    },
+    {
+      "title": "Sense títol",
+      "organ": "Promotora d'Exportacions Catalanes, SA",
+      "scope": "Departaments i sector públic de la Generalitat de Catalunya",
+      "expedient": "PRODECA-2026-8",
+      "cpv": "",
+      "amount": null,
+      "date": null,
+      "status": "execucio",
+      "url": null,
+      "follow_url": null,
+      "priority": "",
+      "tags": [
+        "execucio"
+      ],
+      "alerts": {
+        "count": 1,
+        "latest_short": "En execució",
+        "recent_short": [
+          "En execució"
+        ],
+        "url": null
+      }
+    },
+    {
+      "title": "Sense títol",
+      "organ": "Promotora d'Exportacions Catalanes, SA",
+      "scope": "Departaments i sector públic de la Generalitat de Catalunya",
+      "expedient": "PRODECA-2026-1",
+      "cpv": "",
+      "amount": null,
+      "date": null,
+      "status": "execucio",
+      "url": null,
+      "follow_url": null,
+      "priority": "",
+      "tags": [
+        "execucio"
+      ],
+      "alerts": {
+        "count": 5,
+        "latest_short": "En execució",
+        "recent_short": [
+          "En execució"
+        ],
+        "url": null
+      }
+    },
+    {
+      "title": "Sense títol",
+      "organ": "Institut Català de les Empreses Culturals",
+      "scope": "Departaments i sector públic de la Generalitat de Catalunya",
+      "expedient": "ICEC-2026-51",
+      "cpv": "",
+      "amount": null,
+      "date": null,
+      "status": "execucio",
+      "url": null,
+      "follow_url": null,
+      "priority": "",
+      "tags": [
+        "execucio"
+      ],
+      "alerts": {
+        "count": 1,
+        "latest_short": "En execució",
+        "recent_short": [
+          "En execució"
+        ],
+        "url": null
+      }
+    },
+    {
+      "title": "Sense títol",
+      "organ": "Agència per a la Competitivitat de l’Empresa",
+      "scope": "Departaments i sector públic de la Generalitat de Catalunya",
+      "expedient": "ACCIO-2026-8",
+      "cpv": "",
+      "amount": null,
+      "date": null,
+      "status": "execucio",
+      "url": null,
+      "follow_url": null,
+      "priority": "",
+      "tags": [
+        "execucio"
+      ],
+      "alerts": {
+        "count": 1,
+        "latest_short": "En execució",
+        "recent_short": [
+          "En execució"
+        ],
+        "url": null
+      }
+    },
+    {
+      "title": "Sense títol",
+      "organ": "Departament de Drets Socials i Inclusió",
+      "scope": "Departaments i sector públic de la Generalitat de Catalunya",
+      "expedient": "BE-2026-24",
+      "cpv": "",
+      "amount": null,
+      "date": null,
+      "status": "execucio",
+      "url": null,
+      "follow_url": null,
+      "priority": "",
+      "tags": [
+        "execucio"
+      ],
+      "alerts": {
+        "count": 1,
+        "latest_short": "En execució",
+        "recent_short": [
+          "En execució"
+        ],
+        "url": null
+      }
+    },
+    {
+      "title": "Sense títol",
+      "organ": "Ajuntament de Premià de Mar",
+      "scope": "Entitats de l'administració local",
+      "expedient": "Exp 174-2026-745",
+      "cpv": "",
+      "amount": null,
+      "date": null,
+      "status": "execucio",
+      "url": null,
+      "follow_url": null,
+      "priority": "",
+      "tags": [
+        "execucio"
+      ],
+      "alerts": {
+        "count": 1,
+        "latest_short": "En execució",
+        "recent_short": [
+          "En execució"
+        ],
+        "url": null
+      }
+    },
+    {
+      "title": "Sense títol",
+      "organ": "Gestió de Serveis Sanitaris",
+      "scope": "Departaments i sector públic de la Generalitat de Catalunya",
+      "expedient": "GSS-2026-1",
+      "cpv": "",
+      "amount": null,
+      "date": null,
+      "status": "execucio",
+      "url": null,
+      "follow_url": null,
+      "priority": "",
+      "tags": [
+        "execucio"
+      ],
+      "alerts": {
+        "count": 1,
+        "latest_short": "En execució",
+        "recent_short": [
+          "En execució"
+        ],
+        "url": null
+      }
+    },
+    {
+      "title": "Sense títol",
+      "organ": "Ajuntament d'Olivella",
+      "scope": "Entitats de l'administració local",
+      "expedient": "1404-0196/2026",
+      "cpv": "",
+      "amount": null,
+      "date": null,
+      "status": "execucio",
+      "url": null,
+      "follow_url": null,
+      "priority": "",
+      "tags": [
+        "execucio"
+      ],
+      "alerts": {
+        "count": 1,
+        "latest_short": "En execució",
+        "recent_short": [
+          "En execució"
+        ],
+        "url": null
+      }
+    },
+    {
+      "title": "Sense títol",
+      "organ": "Institut Cartogràfic i Geològic de Catalunya",
+      "scope": "Departaments i sector públic de la Generalitat de Catalunya",
+      "expedient": "ICGC-2026-12",
+      "cpv": "",
+      "amount": null,
+      "date": null,
+      "status": "execucio",
+      "url": null,
+      "follow_url": null,
+      "priority": "",
+      "tags": [
+        "execucio"
+      ],
+      "alerts": {
+        "count": 1,
+        "latest_short": "En execució",
+        "recent_short": [
+          "En execució"
+        ],
         "url": null
       }
     }
