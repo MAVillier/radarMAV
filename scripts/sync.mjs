@@ -1,66 +1,208 @@
+// scripts/sync.mjs
 import fs from 'node:fs/promises';
 import path from 'node:path';
+
 const ROOT = process.cwd();
 const DATA_DIR = path.join(ROOT, 'data');
 const OUT = path.join(DATA_DIR, 'snapshot.json');
-const URLS = { pub:'https://analisi.transparenciacatalunya.cat/resource/ybgg-dgi6.json', exe:'https://analisi.transparenciacatalunya.cat/resource/8idu-wkjv.json', plan:'https://analisi.transparenciacatalunya.cat/resource/u9d7-egbx.json', awd:'https://analisi.transparenciacatalunya.cat/resource/nn7v-4yxe.json' };
-const NOW = new Date();const ISO_NOW = NOW.toISOString();
-function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
-async function fetchJson(url, params={}, {retries=5,timeoutMs=30000,baseDelayMs=1200}={}){
-  const qs = new URLSearchParams(params); const full=`${url}?${qs}`; let last=null;
-  for(let a=1;a<=retries;a++){
-    const ctl=new AbortController(); const t=setTimeout(()=>ctl.abort(),timeoutMs);
-    try{ const res=await fetch(full,{headers:{accept:'application/json'},signal:ctl.signal}); clearTimeout(t); if(!res.ok){const body = await res.text().catch(()=>'' ); throw new Error(`HTTP ${res.status} ${res.statusText} -> ${full}
-${body}`);} return await res.json(); }
-    catch(e){ clearTimeout(t); last=e; const m=String(e?.message||e); const retriable= m.includes('AbortError')||m.includes('fetch failed')||m.includes('network')||/HTTP (429|5\d\d)/.test(m); if(!retriable||a===retries) throw last; await sleep(baseDelayMs*a); }
+
+const URLS = {
+  // PSCP – Publicacions (Socrata)
+  pub:  'https://analisi.transparenciacatalunya.cat/resource/ybgg-dgi6.json',
+  // Execució (publicacions en execució)
+  exe:  'https://analisi.transparenciacatalunya.cat/resource/8idu-wkjv.json',
+  // Programació (planificació)
+  plan: 'https://analisi.transparenciacatalunya.cat/resource/u9d7-egbx.json',
+  // Adjudicacions
+  awd:  'https://analisi.transparenciacatalunya.cat/resource/nn7v-4yxe.json'
+};
+
+const ISO_NOW = new Date().toISOString();
+
+const YEAR = '2026';                 // focus d’enguany
+const LIMIT_PUB = 50000;             // ample perquè no es quedi curt
+const LIMIT_EXE = 20000;
+const LIMIT_PLAN = 10000;
+const LIMIT_AWD = 20000;
+
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+async function getJson(url, params = {}, { retries = 5, timeoutMs = 30000 } = {}) {
+  const qs = new URLSearchParams(params);
+  const full = `${url}?${qs.toString()}`;
+  let last;
+  for (let i = 1; i <= retries; i++) {
+    const ctl = new AbortController();
+    const to = setTimeout(() => ctl.abort(), timeoutMs);
+    try {
+      const res = await fetch(full, { headers: { accept: 'application/json' }, signal: ctl.signal });
+      clearTimeout(to);
+      if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+      return await res.json();
+    } catch (e) {
+      clearTimeout(to);
+      last = e;
+      if (i === retries) throw last;
+      await sleep(1000 * i);
+    }
   }
   throw last;
 }
-async function safe(name,url,params){ try{ return await fetchJson(url,params); }catch(e){ console.warn(`[WARN] ${name} falla:`, e?.message||e); return []; } }
-function n(v=''){return String(v).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase()}
-function get(o,k){ for(const x of k){ if(o?.[x]!==undefined && o?.[x]!==null && o?.[x]!=='') return o[x]; } return null }
-function num(v){ if(v===undefined||v===null||v==='') return null; const x=Number(String(v).replace(/\./g,'').replace(/,/g,'.').replace(/[^0-9.-]/g,'')); return Number.isFinite(x)?x:null }
-function inferDate(o){ return get(o,['data_publicacio','data_publicacio_anunci','data_publicaci','data_d_adjudicacio','data_adjudicacio','data_formalitzacio','data_inici','data_prevista']) || null }
-function inferTitle(o){ return get(o,['descripcio_contracte','descripci_del_contracte','descripcio_del_contracte','objecte_contracte','objecte_del_lot','titol','descripcio']) || 'Sense títol' }
-function inferOrgan(o){ return get(o,['nom_organ','organ_de_contractaci','orga_de_contractaci','organ']) || 'Sense organisme' }
-function inferScope(o){ return get(o,['nom_ambit','ambit','departament','nom_departament','departament_d_adscripci','departament_d_adscripcio','nom_departament_ens']) || '' }
-function inferExp(o){ return get(o,['codi_expedient','codi_d_expedient','expedient']) || '' }
-function inferCPV(o){ return get(o,['codi_cpv','cpv','cpv_principal']) || '' }
-function inferAmount(o){ return get(o,['import_licitacio','import_de_licitacio','import_licitat','valor_estimat_contracte','pressupost_base_licitacio','import_previst_sense_iva','import_previst','import_adjudicat_sense_iva','import_adjudicat','import']) || null }
-function status(o){ const t=n(Object.entries(o||{}).filter(([k])=>/(tipus|fase|publicaci|estat|anunci)/i.test(k)).map(([,v])=>String(v)).join(' | ')); if(t.includes('consulta preliminar')) return 'consulta'; if(t.includes('anunci previ')) return 'previ'; if(t.includes('execuc')) return 'execucio'; if(t.includes('formalitz')) return 'formalitzacio'; if(t.includes('adjudic')) return 'adjudicacio'; if(t.includes('avalu')) return 'avaluacio'; if(t.includes('licit')) return 'licitacio'; return 'licitacio' }
-function urlFrom(o,organ,scope){ return get(o,['url_expedient','url_publicacio','url_publicaci','enllac_expedient','enllac','link']) || null }
-function normPub(o){ const organ=inferOrgan(o), scope=inferScope(o); return {source:'pub',status:status(o),title:inferTitle(o),organ,scope,expedient:inferExp(o),cpv:inferCPV(o),amount:num(inferAmount(o)),date:inferDate(o),url:urlFrom(o,organ,scope),short:'',raw:o} }
-function normExe(o){ const organ=inferOrgan(o), scope=inferScope(o); return {source:'exe',status:'execucio',title:inferTitle(o),organ,scope,expedient:inferExp(o),cpv:inferCPV(o),amount:num(inferAmount(o)),date:inferDate(o),url:urlFrom(o,organ,scope),short:'En execució',raw:o} }
-function normPlan(o){ const organ=inferOrgan(o), scope=inferScope(o); return {source:'plan',status:'programada',title:inferTitle(o),organ,scope,expedient:inferExp(o),cpv:inferCPV(o),amount:num(inferAmount(o)),date:inferDate(o)||'2026-01-01T00:00:00Z',url:urlFrom(o,organ,scope),short:'Programació 2026',raw:o} }
-function normAwd(o){ const organ=inferOrgan(o), scope=inferScope(o); const L=num(get(o,['import_licitat','import_licitacio'])); const A=num(get(o,['import_adjudicat_sense_iva','import_adjudicat'])); return {source:'awd',title:inferTitle(o),organ,scope,expedient:inferExp(o),cpv:inferCPV(o),licitat:L,adjudicat:A,provider:get(o,['empresa_adjudicat_ria','empresa_adjudicataria','adjudicatari'])||'',date:inferDate(o),url:urlFrom(o,organ,scope),discount_pct:L&&A&&L>0?((L-A)/L)*100:null,raw:o} }
-function is2026(d,exp){ return (d && String(d).startsWith('2026')) || String(exp||'').includes('2026') }
-function keyFor(x){ return `${n(x.organ)}|${n(x.expedient||x.title).slice(0,180)}` }
-async function build(){
-  const [pubRaw,exeRaw,planRaw,awdRaw]=await Promise.all([
-    safe('pub',URLS.pub,{$limit:'10000',$order:':updated_at DESC'}),
-    safe('exe',URLS.exe,{$limit:'6000',$order:':updated_at DESC'}),
-    safe('plan',URLS.plan,{$limit:'4000',$where:'(any = 2026 OR any = "2026")',$order:':updated_at DESC'}),
-    safe('awd',URLS.awd,{$limit:'4000',$where:'(any = 2026 OR any = "2026")',$order:':updated_at DESC'})
-  ]);
-  const pubs=pubRaw.map(normPub).filter(x=>is2026(x.date,x.expedient));
-  const exes=exeRaw.map(normExe).filter(x=>is2026(x.date,x.expedient));
-  const plans=planRaw.map(normPlan);
-  const awds=awdRaw.map(normAwd);
-  const groups=new Map();
-  for(const item of [...pubs,...exes,...plans]){ const k=keyFor(item); if(!groups.has(k)) groups.set(k,[]); groups.get(k).push(item); }
-  const items=[];
-  for(const arr of groups.values()){
-    arr.sort((a,b)=> new Date(b.date||0)-new Date(a.date||0));
-    const h=arr[0];
-    const rp=arr.filter(x=>x.source==='pub'||x.source==='exe');
-    const alerts={count:rp.length,latest_short:rp[0]?.short||h.short, recent_short:[...new Set(rp.map(x=>x.short).filter(Boolean))], url: rp.find(x=>x.url)?.url || h.url || null};
-    const item={ title:h.title,organ:h.organ,scope:h.scope,expedient:h.expedient,cpv:h.cpv,amount:h.amount,date:h.date,status:h.status,url: h.url || alerts.url, follow_url: h.url || alerts.url, priority:'', tags:[...new Set(arr.map(x=>x.status))], alerts};
-    items.push(item);
-  }
-  items.sort((a,b)=> new Date(b.date||0)-new Date(a.date||0) || (b.amount||0)-(a.amount||0));
-  return { meta:{generated_at:ISO_NOW,snapshot_scope:'Tot 2026 · PSCP',items:items.length,sources:['PSCP publicacions','PSCP execució','Programació 2026','Adjudicacions 2026']}, items };
+
+function n(v=''){ return String(v).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(); }
+function get(o, arr){ for (const k of arr) if (o?.[k] !== undefined && o[k] !== null && o[k] !== '') return o[k]; return null; }
+function num(v){ if (v===undefined||v===null||v==='') return null; const x = Number(String(v).replace(/\./g,'').replace(/,/g,'.').replace(/[^0-9.-]/g,'')); return Number.isFinite(x)?x:null; }
+
+function infer(o, defs){
+  const organ = get(o, ['nom_organ','organ_de_contractaci','orga_de_contractaci','organ']) || 'Sense organisme';
+  const scope = get(o, ['nom_ambit','ambit','departament','nom_departament','departament_d_adscripcio','nom_departament_ens']) || '';
+  const date  = get(o, ['data_publicacio','data_publicacio_anunci','data_publicaci','data_d_adjudicacio','data_adjudicacio','data_formalitzacio','data_inici','data_prevista']) || null;
+  const title = get(o, ['descripcio_contracte','descripci_del_contracte','descripcio_del_contracte','objecte_contracte','objecte_del_lot','titol','descripcio']) || 'Sense títol';
+  const exp   = get(o, ['codi_expedient','codi_d_expedient','expedient']) || '';
+  const cpv   = get(o, ['codi_cpv','cpv','cpv_principal']) || '';
+  const amount= get(o, ['import_licitacio','import_de_licitacio','import_licitat','valor_estimat_contracte','pressupost_base_licitacio','import_previst_sense_iva','import_previst','import_adjudicat_sense_iva','import_adjudicat','import']) || null;
+
+  return {
+    source: defs.source,
+    status: defs.status,
+    title, organ, scope, expedient: exp, cpv,
+    amount: num(amount),
+    date,
+    url: get(o, ['url_expedient','url_publicacio','url_publicaci','enllac_expedient','enllac','link']) || null,
+    short: defs.short || '',
+    raw: o
+  };
 }
-await fs.mkdir(DATA_DIR,{recursive:true});
-let snap=null; try{ snap=await build(); }catch(e){ console.error('[FATAL]',e?.message||e); try{ const cur=await fs.readFile(OUT,'utf8'); snap=JSON.parse(cur);}catch{ snap={meta:{generated_at:ISO_NOW,snapshot_scope:'Tot 2026 · PSCP',items:0,sources:[],warning:'Snapshot buit'},items:[]}; } }
-await fs.writeFile(OUT, JSON.stringify(snap,null,2), 'utf8');
-console.log(`snapshot escrit: ${OUT} (${snap.items.length} fitxes)`);
+
+function is2026(x){
+  return (x.date && String(x.date).startsWith(YEAR)) || String(x.expedient||'').includes(YEAR);
+}
+
+function groupKey(x){ return `${n(x.organ)}|${n(x.expedient||x.title).slice(0,180)}`; }
+
+async function build() {
+  // Filtres 2026 a origen (Socrata)
+  const wherePub =
+    `(substr(data_publicacio,1,4)='${YEAR}' OR substr(data_publicacio_anunci,1,4)='${YEAR}' ` +
+    `OR codi_expedient like 'CTTI-${YEAR}-%' OR codi_expedient like 'SEM-${YEAR}-%' OR codi_expedient like '2100%')`;
+
+  const whereExe =
+    `(substr(data_inici,1,4)='${YEAR}' OR substr(data_publicacio,1,4)='${YEAR}')`;
+
+  const pubsRaw = await getJson(URLS.pub,  { $where: wherePub, $limit: LIMIT_PUB,  $order: 'data_publicacio DESC' });
+  const exesRaw = await getJson(URLS.exe,  { $where: whereExe, $limit: LIMIT_EXE,  $order: 'data_publicacio DESC' });
+  const planRaw = await getJson(URLS.plan, { $where: `(any=${YEAR})`, $limit: LIMIT_PLAN, $order: ':updated_at DESC' });
+  const awdRaw  = await getJson(URLS.awd,  { $where: `(any=${YEAR})`, $limit: LIMIT_AWD,  $order: ':updated_at DESC' });
+
+  console.log(`[sync] descarregat: pub=${pubsRaw.length} exe=${exesRaw.length} plan=${planRaw.length} awd=${awdRaw.length}`);
+
+  const pubs = pubsRaw.map(o => infer(o, { source:'pub', status: statusFrom(o), short: shortFrom(o) })).filter(is2026);
+  const exes = exesRaw.map(o => infer(o, { source:'exe', status: 'execucio', short: 'En execució' })).filter(is2026);
+  const plans= planRaw.map(o => infer(o, { source:'plan', status: 'programada', short: 'Programació 2026' }));
+  const awds = awdRaw.map(o => {
+    const base = infer(o, { source:'awd', status: 'adjudicacio' });
+    const L = num(get(o, ['import_licitat','import_licitacio']));
+    const A = num(get(o, ['import_adjudicat_sense_iva','import_adjudicat']));
+    return {
+      ...base,
+      licitat: L, adjudicat: A,
+      provider: get(o, ['empresa_adjudicat_ria','empresa_adjudicataria','adjudicatari']) || '',
+      discount_pct: (L && A && L>0) ? ((L-A)/L)*100 : null
+    };
+  });
+
+  // Agrupació
+  const groups = new Map();
+  for (const it of [...pubs, ...exes, ...plans]) {
+    const k = groupKey(it);
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push(it);
+  }
+
+  const items = [];
+  for (const list of groups.values()) {
+    list.sort((a,b)=> new Date(b.date||0) - new Date(a.date||0));
+    const head = list[0];
+    const pubLike = list.filter(x => x.source==='pub' || x.source==='exe');
+    const alerts = {
+      count: pubLike.length,
+      latest_short: pubLike[0]?.short || head.short,
+      recent_short: [...new Set(pubLike.map(x=>x.short).filter(Boolean))],
+      url: pubLike.find(x=>x.url)?.url || head.url || null
+    };
+
+    items.push({
+      title: head.title,
+      organ: head.organ,
+      scope: head.scope,
+      expedient: head.expedient,
+      cpv: head.cpv,
+      amount: head.amount,
+      date: head.date,
+      status: head.status,
+      url: head.url || alerts.url,
+      follow_url: head.url || alerts.url,
+      priority: '',
+      tags: [...new Set(list.map(x=>x.status))],
+      alerts
+    });
+  }
+
+  items.sort((a,b)=> new Date(b.date||0) - new Date(a.date||0) || (b.amount||0)-(a.amount||0));
+
+  console.log(`[sync] agregat items=${items.length}`);
+
+  return {
+    meta: {
+      generated_at: ISO_NOW,
+      snapshot_scope: `Tot ${YEAR} · PSCP`,
+      items: items.length,
+      sources: ['PSCP publicacions', 'PSCP execució', 'Programació 2026', 'Adjudicacions 2026']
+    },
+    items
+  };
+}
+
+function statusFrom(o) {
+  const t = n(Object.entries(o||{})
+    .filter(([k]) => /(tipus|fase|publicaci|estat|anunci)/i.test(k))
+    .map(([,v]) => String(v)).join(' | '));
+
+  if (t.includes('consulta preliminar')) return 'consulta';
+  if (t.includes('anunci previ')) return 'previ';
+  if (t.includes('execuc')) return 'execucio';
+  if (t.includes('formalitz')) return 'formalitzacio';
+  if (t.includes('adjudic')) return 'adjudicacio';
+  if (t.includes('avalu')) return 'avaluacio';
+  if (t.includes('licit')) return 'licitacio';
+  return 'licitacio';
+}
+function shortFrom(o) {
+  const t = n(Object.values(o||{}).join(' | '));
+  if (t.includes('rectif') || t.includes('esmena')) return 'Plecs rectificats';
+  if (t.includes('ampli')) return 'Termini ampliat';
+  if (t.includes('adjudic')) return 'Adjudicació publicada';
+  if (t.includes('formalitz')) return 'Contracte formalitzat';
+  if (t.includes('avalu')) return 'En avaluació';
+  if (t.includes('consulta preliminar')) return 'Consulta mercat';
+  if (t.includes('execuc')) return 'En execució';
+  if (t.includes('licit')) return 'Licitació oberta';
+  return 'Actualització';
+}
+
+await fs.mkdir(DATA_DIR, { recursive: true });
+let snapshot;
+try {
+  snapshot = await build();
+} catch (e) {
+  console.error('[sync] ERROR:', e?.message || e);
+  try {
+    const cur = await fs.readFile(OUT, 'utf8');
+    snapshot = JSON.parse(cur);
+  } catch {
+    snapshot = { meta: { generated_at: ISO_NOW, snapshot_scope: `Tot ${YEAR} · PSCP`, items: 0, sources: [], warning: 'Snapshot buit' }, items: [] };
+  }
+}
+
+await fs.writeFile(OUT, JSON.stringify(snapshot, null, 2), 'utf8');
+console.log(`[sync] snapshot escrit: ${OUT} (${snapshot.items.length} fitxes)`);
