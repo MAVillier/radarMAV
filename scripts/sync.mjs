@@ -80,6 +80,33 @@ function is2026(x){
 
 function groupKey(x){ return `${n(x.organ)}|${n(x.expedient||x.title).slice(0,180)}`; }
 
+function statusFrom(o) {
+  const t = n(Object.entries(o||{})
+    .filter(([k]) => /(tipus|fase|publicaci|estat|anunci)/i.test(k))
+    .map(([,v]) => String(v)).join(' | '));
+
+  if (t.includes('consulta preliminar')) return 'consulta';
+  if (t.includes('anunci previ'))       return 'previ';
+  if (t.includes('execuc'))             return 'execucio';
+  if (t.includes('formalitz'))          return 'formalitzacio';
+  if (t.includes('adjudic'))            return 'adjudicacio';
+  if (t.includes('avalu'))              return 'avaluacio';
+  if (t.includes('licit'))              return 'licitacio';
+  return 'licitacio';
+}
+function shortFrom(o) {
+  const t = n(Object.values(o||{}).join(' | '));
+  if (t.includes('rectif') || t.includes('esmena')) return 'Plecs rectificats';
+  if (t.includes('ampli')) return 'Termini ampliat';
+  if (t.includes('adjudic')) return 'Adjudicació publicada';
+  if (t.includes('formalitz')) return 'Contracte formalitzat';
+  if (t.includes('avalu')) return 'En avaluació';
+  if (t.includes('consulta preliminar')) return 'Consulta mercat';
+  if (t.includes('execuc')) return 'En execució';
+  if (t.includes('licit')) return 'Licitació oberta';
+  return 'Actualització';
+}
+
 async function build() {
   // Filtres 2026 a origen (Socrata)
   const wherePub =
@@ -163,34 +190,8 @@ async function build() {
   };
 }
 
-function statusFrom(o) {
-  const t = n(Object.entries(o||{})
-    .filter(([k]) => /(tipus|fase|publicaci|estat|anunci)/i.test(k))
-    .map(([,v]) => String(v)).join(' | '));
-
-  if (t.includes('consulta preliminar')) return 'consulta';
-  if (t.includes('anunci previ')) return 'previ';
-  if (t.includes('execuc')) return 'execucio';
-  if (t.includes('formalitz')) return 'formalitzacio';
-  if (t.includes('adjudic')) return 'adjudicacio';
-  if (t.includes('avalu')) return 'avaluacio';
-  if (t.includes('licit')) return 'licitacio';
-  return 'licitacio';
-}
-function shortFrom(o) {
-  const t = n(Object.values(o||{}).join(' | '));
-  if (t.includes('rectif') || t.includes('esmena')) return 'Plecs rectificats';
-  if (t.includes('ampli')) return 'Termini ampliat';
-  if (t.includes('adjudic')) return 'Adjudicació publicada';
-  if (t.includes('formalitz')) return 'Contracte formalitzat';
-  if (t.includes('avalu')) return 'En avaluació';
-  if (t.includes('consulta preliminar')) return 'Consulta mercat';
-  if (t.includes('execuc')) return 'En execució';
-  if (t.includes('licit')) return 'Licitació oberta';
-  return 'Actualització';
-}
-
 await fs.mkdir(DATA_DIR, { recursive: true });
+
 let snapshot;
 try {
   snapshot = await build();
@@ -200,7 +201,16 @@ try {
     const cur = await fs.readFile(OUT, 'utf8');
     snapshot = JSON.parse(cur);
   } catch {
-    snapshot = { meta: { generated_at: ISO_NOW, snapshot_scope: `Tot ${YEAR} · PSCP`, items: 0, sources: [], warning: 'Snapshot buit' }, items: [] };
+    snapshot = {
+      meta: {
+        generated_at: ISO_NOW,
+        snapshot_scope: `Tot ${YEAR} · PSCP`,
+        items: 0,
+        sources: [],
+        warning: 'Snapshot buit'
+      },
+      items: []
+    };
   }
 }
 
