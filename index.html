@@ -4,30 +4,35 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Radar Gencat Pro — 2026</title>
+
     <meta name="color-scheme" content="light dark" />
     <meta name="theme-color" content="#0b1020" />
-    <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./styles.css" />
-  </head>
-  <body>
+
+    <manifest.webmanifest
+    <link rel="icon" href="/icons/icon.svgnect" href="https://fonts.googleapis.com" crossorigincom/css2?family=Inter:wght@400;500;600;700&display=ink rel="stylesheet" href="./styles.css Topbar -->
     <header class="topbar">
       <div class="brand">
         <div class="logo">R</div>
-        <div class="brand-txt"><strong>Radar</strong><span>Gencat · 2026</span></div>
+        <div class="brand-txt">
+          <strong>Radar</strong><span>Gencat · 2026</span>
+        </div>
       </div>
+
       <div class="search-wrap">
-        <input id="q" class="search" type="search" placeholder="Busca per paraula clau, codi d’expedient (ex. CTTI-2026-77, SEM-2026-61, 21000815), CPV…" autocomplete="off" />
+        <input id="q" class="search" type="search"
+               placeholder="Busca per paraula clau, codi d’expedient (ex. CTTI-2026-77, SEM-2026-61, 21000815), CPV…"
+               autocomplete="off" />
         <button id="btnSearch" class="btn btn-primary">Cercar</button>
       </div>
+
       <nav class="actions">
         <button id="btnRefresh" class="btn btn-ghost" title="Refresca dades">↻</button>
-        <button id="btnTheme" class="btn btn-ghost" title="Tema clar/fosc">◐</button>
+        <button id="btnTheme"   class="btn btn-ghost" title="Tema clar/fosc">◐</button>
         <a class="btn btn-ghost" href="https://contractaciopublica.cat/ca/inici" target="_blank" rel="noopener">PSCP</a>
       </nav>
     </header>
+
+    <!-- Chips ràpids -->
     <section class="chips">
       <button class="chip" data-chip="year:2026">Any 2026</button>
       <button class="chip" data-chip="organ:CTTI">CTTI</button>
@@ -40,6 +45,8 @@
       <button class="chip" data-chip="status:execucio">Execució</button>
       <button class="chip chip-clear" data-chip="clear">Neteja filtres</button>
     </section>
+
+    <!-- KPIs -->
     <section class="kpis">
       <div class="kpi"><div class="kpi-val" id="kpiTotal">0</div><div class="kpi-lbl">Total fitxes</div></div>
       <div class="kpi"><div class="kpi-val" id="kpiLicit">0</div><div class="kpi-lbl">Licitació</div></div>
@@ -47,9 +54,12 @@
       <div class="kpi"><div class="kpi-val" id="kpiAdj">0</div><div class="kpi-lbl">Adjudicació</div></div>
       <div class="kpi"><div class="kpi-val" id="kpiExec">0</div><div class="kpi-lbl">Execució</div></div>
     </section>
+
     <main class="layout">
+      <!-- Sidebar filtres -->
       <aside class="sidebar" id="filters">
-        <div class="side-block"><div class="side-title">Ordenació</div>
+        <div class="side-block">
+          <div class="side-title">Ordenació</div>
           <select id="orderBy" class="select">
             <option value="date_desc">Data ↓</option>
             <option value="date_asc">Data ↑</option>
@@ -58,11 +68,15 @@
             <option value="priority_desc">Prioritat ↓</option>
           </select>
         </div>
-        <div class="side-block"><div class="side-title">Organisme</div>
+
+        <div class="side-block">
+          <div class="side-title">Organisme</div>
           <input class="input" id="organFilter" placeholder="Filtra organisme…" />
           <div id="organList" class="checklist"></div>
         </div>
-        <div class="side-block"><div class="side-title">Estat</div>
+
+        <div class="side-block">
+          <div class="side-title">Estat</div>
           <label class="chk"><input type="checkbox" class="st" value="licitacio" checked> Licitació</label>
           <label class="chk"><input type="checkbox" class="st" value="avaluacio" checked> Avaluació</label>
           <label class="chk"><input type="checkbox" class="st" value="adjudicacio" checked> Adjudicació</label>
@@ -71,39 +85,55 @@
           <label class="chk"><input type="checkbox" class="st" value="consulta" checked> Consulta prèvia</label>
           <label class="chk"><input type="checkbox" class="st" value="previ" checked> Anunci previ</label>
         </div>
-        <div class="side-block"><div class="side-title">Any</div>
+
+        <div class="side-block">
+          <div class="side-title">Any</div>
           <label class="chk"><input type="checkbox" class="yr" value="2026" checked> 2026</label>
         </div>
-        <div class="side-block"><div class="side-title">CPV (prefix)</div>
+
+        <div class="side-block">
+          <div class="side-title">CPV (prefix)</div>
           <input class="input" id="cpv" placeholder="48, 72, 64…" />
         </div>
-        <div class="side-block"><div class="side-title">Import (sense IVA)</div>
-          <div class="row"><input class="input" id="min" placeholder="min €" inputmode="numeric" />
+
+        <div class="side-block">
+          <div class="side-title">Import (sense IVA)</div>
+          <div class="row">
+            <input class="input" id="min" placeholder="min €" inputmode="numeric" />
             <input class="input" id="max" placeholder="max €" inputmode="numeric" />
           </div>
         </div>
+
         <div class="side-block">
           <button id="apply" class="btn btn-primary w100">Aplicar</button>
           <button id="reset" class="btn btn-ghost w100">Restableix</button>
         </div>
       </aside>
+
+      <!-- Resultats -->
       <section class="results">
         <div class="toolbar">
           <div id="activeFilters" class="active-filters"></div>
-          <div class="pager"><button id="prev" class="btn btn-ghost" disabled>←</button>
+          <div class="pager">
+            <button id="prev" class="btn btn-ghost" disabled>←</button>
             <span id="pageInfo" class="muted">0 / 0</span>
             <button id="next" class="btn btn-ghost" disabled>→</button>
           </div>
         </div>
+
         <div id="grid" class="grid"></div>
         <div id="empty" class="empty hide">Cap resultat</div>
       </section>
     </main>
+
     <footer class="foot">
       <div>© 2026 · Radar Gencat Pro · Dades PSCP / Dades Obertes</div>
-      <div class="foot-links"><a href="https://contractaciopublica.cat/ca/inici" target="_blank" rel="noopener">PSCP</a>
-        <a href="https://analisi.transparenciacatalunya.cat/" target="_blank" rel="noopener">Dades obertes</a></div>
+      <div class="foot-links">
+        <a href="https://contractaciopublica.cat/ca/inici" target="_blank" rel="noopener">PSCP</a>
+        <a href="https://analisi.transparenciacatalunya.cat/"a/login" target="_blank" rel="noopener">Dades obertes</a>
+      </div>
     </footer>
-    <script src="./app.js" type="module"></script>
+
+    <script srccript>
   </body>
 </html>
